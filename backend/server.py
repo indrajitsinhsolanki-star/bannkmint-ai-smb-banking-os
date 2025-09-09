@@ -54,7 +54,10 @@ load_dotenv(ROOT_DIR / '.env')
 
 # Initialize database
 create_tables()
-init_default_data()
+try:
+    init_default_data()
+except:
+    pass  # Ignore if already initialized
 
 # Create the main app
 app = FastAPI(title="BannkMint AI", version="0.2.0")
