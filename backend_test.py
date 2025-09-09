@@ -12,7 +12,7 @@ import time
 import random
 
 # Configuration
-BASE_URL = "https://banking-forecast.preview.emergentagent.com"
+BASE_URL = "http://localhost:8001"
 TEST_CSV_DATA = """Date,Description,Amount
 2024-01-15,Coffee Shop Purchase,-4.50
 2024-01-15,Client Payment Received,1500.00
