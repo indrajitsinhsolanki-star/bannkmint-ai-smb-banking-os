@@ -77,39 +77,258 @@ const FeatureCard = ({ title, description, link }) => (
   </div>
 );
 
-// Upload Page
-const UploadPage = () => (
-  <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
-    <h2 style={{ fontSize: '2rem', marginBottom: '1rem', color: '#333' }}>📁 CSV Upload</h2>
-    <div style={{ 
-      border: '2px dashed #ddd', 
-      borderRadius: '8px', 
-      padding: '3rem', 
-      textAlign: 'center',
-      backgroundColor: '#f9f9f9'
-    }}>
-      <p style={{ fontSize: '1.2rem', color: '#666', marginBottom: '1rem' }}>
-        Upload your transaction CSV files here
-      </p>
-      <p style={{ color: '#888' }}>
-        BannkMint AI will automatically categorize and deduplicate your transactions
-      </p>
-      <div style={{ marginTop: '2rem' }}>
-        <button style={{ 
-          backgroundColor: '#0066cc', 
-          color: 'white', 
-          border: 'none', 
-          padding: '0.75rem 1.5rem', 
-          borderRadius: '4px',
-          fontSize: '1rem',
-          cursor: 'pointer'
-        }}>
-          Choose CSV File
+// Upload Page with actual file upload functionality
+const UploadPage = () => {
+  const [uploadStatus, setUploadStatus] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+  const fileInputRef = useRef(null);
+
+  // Get backend URL from environment
+  const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || '';
+
+  const handleFileUpload = async (file) => {
+    if (!file) return;
+
+    // Validate file type
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      setUploadStatus({
+        type: 'error',
+        message: 'Please upload a CSV file only.',
+        details: null
+      });
+      return;
+    }
+
+    // Validate file size (20MB limit)
+    if (file.size > 20 * 1024 * 1024) {
+      setUploadStatus({
+        type: 'error',
+        message: 'File too large. Please upload files smaller than 20MB.',
+        details: null
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadStatus(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('account_id', 'default-account');
+
+      console.log('Uploading to:', `${API_BASE_URL}/api/ingest`);
+
+      const response = await axios.post(`${API_BASE_URL}/api/ingest`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      const result = response.data;
+
+      if (result.success) {
+        setUploadStatus({
+          type: 'success',
+          message: 'CSV file processed successfully!',
+          details: {
+            imported: result.imported,
+            skipped: result.skipped,
+            categorized_pct: result.categorized_pct,
+            total_processed: result.total_processed
+          }
+        });
+      } else {
+        setUploadStatus({
+          type: 'error',
+          message: result.error || 'Failed to process CSV file',
+          details: result.suggestion ? { suggestion: result.suggestion } : null
+        });
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      setUploadStatus({
+        type: 'error',
+        message: error.response?.data?.detail || 'Failed to upload file. Please check the backend connection.',
+        details: null
+      });
+    } finally {
+      setIsUploading(false);
+      // Clear the file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileUpload(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleButtonClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      handleFileUpload(e.target.files[0]);
+    }
+  };
+
+  return (
+    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
+      <h2 style={{ fontSize: '2rem', marginBottom: '1rem', color: '#333' }}>📁 CSV Upload</h2>
+      
+      {/* Upload Area */}
+      <div 
+        style={{ 
+          border: dragActive ? '2px solid #0066cc' : '2px dashed #ddd', 
+          borderRadius: '8px', 
+          padding: '3rem', 
+          textAlign: 'center',
+          backgroundColor: dragActive ? '#f0f8ff' : '#f9f9f9',
+          cursor: 'pointer',
+          transition: 'all 0.3s ease'
+        }}
+        onDragEnter={handleDrag}
+        onDragLeave={handleDrag}
+        onDragOver={handleDrag}
+        onDrop={handleDrop}
+        onClick={handleButtonClick}
+      >
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".csv"
+          onChange={handleFileChange}
+          style={{ display: 'none' }}
+        />
+        
+        <p style={{ fontSize: '1.2rem', color: '#666', marginBottom: '1rem' }}>
+          {dragActive ? 'Drop your CSV file here' : 'Upload your transaction CSV files here'}
+        </p>
+        <p style={{ color: '#888', marginBottom: '2rem' }}>
+          BannkMint AI will automatically categorize and deduplicate your transactions
+        </p>
+        
+        <button 
+          style={{ 
+            backgroundColor: isUploading ? '#ccc' : '#0066cc', 
+            color: 'white', 
+            border: 'none', 
+            padding: '0.75rem 1.5rem', 
+            borderRadius: '4px',
+            fontSize: '1rem',
+            cursor: isUploading ? 'not-allowed' : 'pointer'
+          }}
+          disabled={isUploading}
+        >
+          {isUploading ? 'Processing...' : 'Choose CSV File'}
         </button>
+        
+        <p style={{ fontSize: '0.8rem', color: '#999', marginTop: '1rem' }}>
+          Supports .csv files up to 20MB. Drag and drop or click to browse.
+        </p>
+      </div>
+
+      {/* Upload Status */}
+      {uploadStatus && (
+        <div 
+          style={{ 
+            marginTop: '2rem',
+            padding: '1rem',
+            borderRadius: '4px',
+            backgroundColor: uploadStatus.type === 'success' ? '#d4edda' : '#f8d7da',
+            border: `1px solid ${uploadStatus.type === 'success' ? '#c3e6cb' : '#f5c6cb'}`,
+            color: uploadStatus.type === 'success' ? '#155724' : '#721c24'
+          }}
+        >
+          <h4 style={{ margin: '0 0 0.5rem 0' }}>
+            {uploadStatus.type === 'success' ? '✅ Success!' : '❌ Error'}
+          </h4>
+          <p style={{ margin: '0 0 1rem 0' }}>{uploadStatus.message}</p>
+          
+          {uploadStatus.details && uploadStatus.type === 'success' && (
+            <div style={{ fontSize: '0.9rem' }}>
+              <p><strong>Imported:</strong> {uploadStatus.details.imported} transactions</p>
+              {uploadStatus.details.skipped > 0 && (
+                <p><strong>Skipped (duplicates):</strong> {uploadStatus.details.skipped}</p>
+              )}
+              <p><strong>Auto-categorized:</strong> {uploadStatus.details.categorized_pct}%</p>
+              <p><strong>Total processed:</strong> {uploadStatus.details.total_processed} rows</p>
+            </div>
+          )}
+          
+          {uploadStatus.details?.suggestion && (
+            <p style={{ fontSize: '0.9rem', fontStyle: 'italic' }}>
+              💡 {uploadStatus.details.suggestion}
+            </p>
+          )}
+          
+          {uploadStatus.type === 'success' && (
+            <div style={{ marginTop: '1rem' }}>
+              <Link 
+                to="/reconcile"
+                style={{
+                  backgroundColor: '#28a745',
+                  color: 'white',
+                  padding: '0.5rem 1rem',
+                  textDecoration: 'none',
+                  borderRadius: '4px',
+                  marginRight: '1rem',
+                  display: 'inline-block'
+                }}
+              >
+                Review Transactions →
+              </Link>
+              <Link 
+                to="/forecast"
+                style={{
+                  backgroundColor: '#17a2b8',
+                  color: 'white',
+                  padding: '0.5rem 1rem',
+                  textDecoration: 'none',
+                  borderRadius: '4px',
+                  display: 'inline-block'
+                }}
+              >
+                View Forecast →
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
+      
+      {/* Instructions */}
+      <div style={{ marginTop: '2rem', fontSize: '0.9rem', color: '#666' }}>
+        <h4>Supported CSV Format:</h4>
+        <ul>
+          <li>Required columns: date, description, amount (or debit/credit)</li>
+          <li>Optional columns: balance, category</li>
+          <li>Date formats: YYYY-MM-DD, MM/DD/YYYY, DD/MM/YYYY, and more</li>
+          <li>Amount formats: $1,234.56, (1234.56), 1234.56</li>
+        </ul>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 // Reconcile Page
 const ReconcilePage = () => (
