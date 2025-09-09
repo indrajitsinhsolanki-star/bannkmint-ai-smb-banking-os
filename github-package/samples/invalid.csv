@@ -1,0 +1,13 @@
+This is not a valid CSV file
+It contains random text instead of transaction data
+Some lines have commas, others don't
+date,description,amount
+not-a-date,"Invalid transaction",$invalid$
+2024-01-01,"Good transaction",50.00
+invalid-row-with-missing-data
+"Another bad row","with weird formatting",,
+2024-13-45,"Invalid date","not-a-number"
+,,"Empty values everywhere",
+This line has no structure at all
+date,description,amount,extra,too,many,columns
+2024-01-01,"Too many columns",50.00,extra1,extra2,extra3

@@ -4,9 +4,9 @@
 > 
 > Transform from basic CSV processing to a comprehensive Banking OS that prevents cash flow crises and delivers actionable business intelligence.
 
-[![Production Ready](https://img.shields.io/badge/Production-Ready-green.svg)](https://github.com/bankmint/bankmint-ai)
-[![API Tests](https://img.shields.io/badge/API%20Tests-16%2F19%20Passing-brightgreen.svg)](https://github.com/bankmint/bankmint-ai)
-[![SMB Focused](https://img.shields.io/badge/SMB-Focused-blue.svg)](https://github.com/bankmint/bankmint-ai)
+[![Production Ready](https://img.shields.io/badge/Production-Ready-green.svg)](https://github.com/bannkmint/bannkmint-ai)
+[![API Tests](https://img.shields.io/badge/API%20Tests-16%2F19%20Passing-brightgreen.svg)](https://github.com/bannkmint/bannkmint-ai)
+[![SMB Focused](https://img.shields.io/badge/SMB-Focused-blue.svg)](https://github.com/bannkmint/bannkmint-ai)
 [![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ## 🎯 **What is BannkMint AI?**
@@ -31,8 +31,8 @@ BannkMint AI is the **only SMB-focused Banking OS** that combines AI-powered tra
 
 ### **Option 1: Docker (Recommended)**
 ```bash
-git clone https://github.com/bankmint/bankmint-ai.git
-cd bankmint-ai
+git clone https://github.com/bannkmint/bannkmint-ai.git
+cd bannkmint-ai
 docker-compose up -d
 
 # Open browser to http://localhost:3000
@@ -115,7 +115,7 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for complete production setup guide.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    BannkMint AI SMB Banking OS                │
+│                    BannkMint AI SMB Banking OS               │
 ├─────────────────────────────────────────────────────────────┤
 │  Frontend (React + Tailwind)                               │
 │  ├── Executive Dashboard     ├── Reconciliation Interface  │
@@ -314,16 +314,16 @@ make seed-data
 ## 📞 **Support & Community**
 
 ### **Get Help**
-- 📧 **Email**: support@bankmint.ai
+- 📧 **Email**: support@bannkmint.ai
 - 💬 **Live Chat**: Available during business hours
-- 📚 **Help Center**: https://help.bankmint.ai
+- 📚 **Help Center**: https://help.bannkmint.ai
 - 🎥 **Video Support**: Screen sharing available
 
 ### **Community**
-- 👥 **User Forum**: https://community.bankmint.ai
+- 👥 **User Forum**: https://community.bannkmint.ai
 - 📺 **Weekly Webinars**: Feature updates and Q&A
 - 📰 **Newsletter**: Monthly insights and tips
-- 🐦 **Twitter**: [@BankMintAI](https://twitter.com/bankmintai)
+- 🐦 **Twitter**: [@BannkMintAI](https://twitter.com/bannkmintai)
 
 ### **Professional Services**
 - 🎯 **Implementation**: White-glove setup and training
@@ -415,8 +415,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ```bash
 # Clone and start
-git clone https://github.com/bankmint/bankmint-ai.git
-cd bankmint-ai && docker-compose up -d
+git clone https://github.com/bannkmint/bannkmint-ai.git
+cd bannkmint-ai && docker-compose up -d
 
 # Open http://localhost:3000 and upload your first CSV!
 ```
@@ -437,4 +437,4 @@ Help us prevent SMB failures through better financial intelligence:
 
 **BannkMint AI v0.2.0** - *Empowering SMB Financial Intelligence Since 2024*
 
-*Built with ❤️ for the SMB community | [Live Demo](https://demo.bankmint.ai) | [Documentation](docs/) | [Community](https://community.bankmint.ai)*
+*Built with ❤️ for the SMB community | [Live Demo](https://demo.bannkmint.ai) | [Documentation](docs/) | [Community](https://community.bannkmint.ai)*

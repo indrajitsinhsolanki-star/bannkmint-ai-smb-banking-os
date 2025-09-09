@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 from db import get_db, create_tables, init_default_data, Transaction, Account, Rule
 from services.ingest import CSVIngestor
 from services.categorize import TransactionCategorizer
-from services.forecast import SMBCashFlowForecaster as CashFlowForecaster
+from services.forecast import SMBCashFlowForecaster
 from services.banking import BankingIntegrationService
 from services.reporting import MonthEndReportingService
 
@@ -101,7 +101,7 @@ async def health_check():
 @api_router.get("/")
 async def root():
     """Legacy root endpoint"""
-    return {"message": "BannkMint AI v0.2 - Financial Intelligence Platform"}
+    return {"message": "BannkMint AI v0.2 - SMB Financial Intelligence Platform"}
 
 # Ingestion endpoints
 @api_router.post("/ingest", response_model=IngestResponse)
@@ -318,22 +318,7 @@ async def delete_rule(rule_id: str, db: Session = Depends(get_db)):
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
-# Legacy compatibility endpoints
-@api_router.post("/categorize-transactions")
-async def legacy_categorize_transactions(
-    data: Dict[str, Any],
-    db: Session = Depends(get_db)
-):
-    """Legacy endpoint for compatibility"""
-    # This would delegate to new categorization system
-    return {"message": "Please use the new /api/ingest endpoint"}
-
-@api_router.post("/clean-csv")
-async def legacy_clean_csv(file: UploadFile = File(...)):
-    """Legacy endpoint for compatibility"""
-    return {"message": "Please use the new /api/ingest endpoint for CSV processing"}
-
-# Forecast endpoints (Phase 3B - SMB-Focused)
+# SMB-Focused Forecast endpoints (Phase 3B)
 @api_router.get("/forecast", response_model=ForecastResponse)
 async def get_smb_cash_flow_forecast(
     weeks: int = 6,
@@ -343,7 +328,7 @@ async def get_smb_cash_flow_forecast(
 ):
     """Get SMB-focused 4-8 week cash flow forecast with crisis prevention"""
     try:
-        forecaster = CashFlowForecaster(db)
+        forecaster = SMBCashFlowForecaster(db)
         
         # Validate SMB-appropriate parameters
         weeks = max(4, min(weeks, 8))  # Force 4-8 week range
@@ -368,7 +353,7 @@ async def get_crisis_analysis(
 ):
     """Get cash flow crisis analysis and prevention recommendations"""
     try:
-        forecaster = CashFlowForecaster(db)
+        forecaster = SMBCashFlowForecaster(db)
         forecast_data = forecaster.generate_smb_forecast(weeks=weeks, account_id=account_id)
         
         return {
@@ -392,7 +377,7 @@ async def get_scenario_planning(
 ):
     """Get scenario planning analysis (optimistic/base/pessimistic)"""
     try:
-        forecaster = CashFlowForecaster(db)
+        forecaster = SMBCashFlowForecaster(db)
         
         scenarios = {}
         for scenario_name in ['optimistic', 'base', 'pessimistic']:
@@ -426,7 +411,7 @@ async def get_smb_recurring_patterns(
 ):
     """Get SMB-specific recurring patterns with business criticality"""
     try:
-        forecaster = CashFlowForecaster(db)
+        forecaster = SMBCashFlowForecaster(db)
         patterns = forecaster._detect_smb_patterns(account_id)
         
         return {
@@ -575,6 +560,21 @@ async def get_profit_loss_report(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"P&L report generation failed: {str(e)}")
 
+# Legacy compatibility endpoints
+@api_router.post("/categorize-transactions")
+async def legacy_categorize_transactions(
+    data: Dict[str, Any],
+    db: Session = Depends(get_db)
+):
+    """Legacy endpoint for compatibility"""
+    # This would delegate to new categorization system
+    return {"message": "Please use the new /api/ingest endpoint"}
+
+@api_router.post("/clean-csv")
+async def legacy_clean_csv(file: UploadFile = File(...)):
+    """Legacy endpoint for compatibility"""
+    return {"message": "Please use the new /api/ingest endpoint for CSV processing"}
+
 # Include the router in the main app
 app.include_router(api_router)
 
@@ -594,20 +594,3 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
-
-

@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      - MONGO_URL=mongodb://localhost:27017
+      - DB_NAME=bannkmint_ai
+      - CORS_ORIGINS=http://localhost:3000
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./backend:/app
+      - ./backend/data:/app/data
+    command: uvicorn server:app --host 0.0.0.0 --port 8001 --reload
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    environment:
+      - REACT_APP_BACKEND_URL=http://localhost:8001
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: yarn start
+
+volumes:
+  backend_data:
