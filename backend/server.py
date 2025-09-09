@@ -1,6 +1,5 @@
-from fastapi import FastAPI, APIRouter, Depends, HTTPException, File, UploadFile, Form
+from fastapi import FastAPI, APIRouter, HTTPException, File, UploadFile, Form
 from fastapi.responses import JSONResponse
-from sqlalchemy.orm import Session
 from starlette.middleware.cors import CORSMiddleware
 import os
 import logging
@@ -10,12 +9,44 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
 
 # Import our database and services
-from db import get_db, create_tables, init_default_data, Transaction, Account, Rule
-from services.ingest import CSVIngestor
-from services.categorize import TransactionCategorizer
-from services.forecast import SMBCashFlowForecaster as CashFlowForecaster
-from services.banking import BankingIntegrationService
-from services.reporting import MonthEndReportingService
+from db import create_tables, init_default_data, execute_query, get_or_create_account, generate_id, get_db, Transaction, Account, Rule
+from services.ingest import ingestion_service, CSVIngestor
+from services.categorize import categorization_service, TransactionCategorizer
+from services.forecast import forecasting_service, SMBCashFlowForecaster as CashFlowForecaster
+from services.banking import banking_service, BankingIntegrationService
+from services.reporting import reporting_service, MonthEndReportingService
+
+# Compatibility imports for FastAPI dependency injection
+from fastapi import Depends
+
+# Mock Session class for compatibility
+class Session:
+    def query(self, model):
+        return MockQuery(model)
+    def add(self, obj):
+        pass
+    def commit(self):
+        pass
+    def rollback(self):
+        pass
+
+class MockQuery:
+    def __init__(self, model):
+        self.model = model
+    def filter(self, *args):
+        return self
+    def order_by(self, *args):
+        return self
+    def all(self):
+        return []
+    def first(self):
+        return None
+    def count(self):
+        return 0
+    def offset(self, n):
+        return self
+    def limit(self, n):
+        return self
 
 ROOT_DIR = Path(__file__).parent
 from dotenv import load_dotenv
