@@ -22,13 +22,15 @@ The issue was in the `/app/frontend/package.json` file. While the application ha
 ```toml
 [build]
   base = "frontend"
-  publish = "frontend/build"
+  publish = "build"
   command = "yarn build"
 
 [build.environment]
   NODE_VERSION = "18"
   YARN_VERSION = "1.22.22"
 ```
+
+**Important**: The publish directory is set to `"build"` (relative to the base directory `"frontend"`), not `"frontend/build"`. When Netlify sets a base directory, all paths become relative to that base.
 
 ### 3. Added Production Environment Variables (`/app/frontend/.env.production`)
 ```
