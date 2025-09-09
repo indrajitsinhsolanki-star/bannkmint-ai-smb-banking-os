@@ -60,9 +60,14 @@ GENERATE_SOURCEMAP=false
 ## Deployment Instructions for Netlify
 1. Use the updated `/app/frontend/package.json`
 2. Set build command to: `yarn build`
-3. Set publish directory to: `frontend/build`
+3. Set publish directory to: `build` (relative to base directory)
 4. Set base directory to: `frontend`
 5. Node.js version: 18 (auto-detected from .nvmrc)
+
+**Directory Structure Explanation:**
+- Base directory: `frontend/` (where package.json and source code are)  
+- Build output: `frontend/build/` (created by yarn build)
+- Netlify publish setting: `build` (relative to base, so it finds `frontend/build/`)
 
 ## Test Results
 ```bash
