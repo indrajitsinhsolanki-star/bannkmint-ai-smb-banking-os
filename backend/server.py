@@ -359,24 +359,33 @@ async def legacy_clean_csv(file: UploadFile = File(...)):
 async def get_smb_cash_flow_forecast(
     weeks: int = 6,
     scenario: str = "base",
-    account_id: Optional[str] = None,
-    db: Session = Depends(get_db)
+    account_id: Optional[str] = None
 ):
     """Get SMB-focused 4-8 week cash flow forecast with crisis prevention"""
     try:
-        forecaster = CashFlowForecaster(db)
-        
         # Validate SMB-appropriate parameters
         weeks = max(4, min(weeks, 8))  # Force 4-8 week range
         scenario = scenario if scenario in ['optimistic', 'base', 'pessimistic'] else 'base'
         
-        forecast_data = forecaster.generate_smb_forecast(
+        forecast_data = forecasting_service.generate_cash_flow_forecast(
             weeks=weeks,
-            account_id=account_id,
             scenario=scenario
         )
         
-        return ForecastResponse(**forecast_data)
+        # Convert to expected response format
+        return ForecastResponse(
+            forecast_period=forecast_data.get('forecast_period', f'{weeks}_weeks'),
+            scenario=forecast_data.get('scenario', scenario),
+            current_cash=forecast_data.get('current_balance', 0.0),
+            crisis_threshold=1000.0,
+            daily_projections=forecast_data.get('projections', []),
+            smb_patterns=[],
+            crisis_alerts=forecast_data.get('crisis_alerts', []),
+            business_metrics=forecast_data.get('key_metrics', {}),
+            scenario_analysis={scenario: forecast_data.get('key_metrics', {})},
+            recommendations=forecast_data.get('recommendations', []),
+            generated_at=forecast_data.get('generated_at', datetime.now().isoformat())
+        )
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"SMB forecast generation failed: {str(e)}")
