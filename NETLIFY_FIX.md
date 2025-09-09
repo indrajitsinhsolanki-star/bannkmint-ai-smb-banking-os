@@ -79,3 +79,16 @@ $ cd /app/frontend && yarn build
 ```
 
 The BannkMint AI React application is now ready for successful Netlify deployment! 🚀
+
+## Troubleshooting
+
+### Issue: "Deploy directory 'frontend/frontend/build' does not exist"
+**Solution**: This happens when the publish directory is incorrectly set to `"frontend/build"` instead of `"build"`. When you set a base directory in Netlify, all paths become relative to that base.
+
+**Correct Configuration:**
+- Base directory: `frontend`
+- Publish directory: `build` (not `frontend/build`)
+- Build command: `yarn build`
+
+### Issue: "react-scripts: not found"
+**Solution**: This was the original issue, now fixed by updating package.json with all required dependencies and devDependencies.
