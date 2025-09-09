@@ -198,43 +198,50 @@ async def ingest_csv(
 async def get_reconciliation_inbox(
     min_conf: float = 0.9,
     page: int = 1,
-    limit: int = 50,
-    db: Session = Depends(get_db)
+    limit: int = 50
 ):
     """Get transactions needing review"""
     try:
         offset = (page - 1) * limit
         
         # Get transactions with low confidence or uncategorized
-        query = db.query(Transaction).filter(
-            (Transaction.confidence < min_conf) | 
-            (Transaction.confidence.is_(None)) |
-            (Transaction.category == 'Uncategorized')
-        ).order_by(Transaction.posted_at.desc())
+        query = f"""
+            SELECT * FROM transactions 
+            WHERE (confidence < {min_conf} OR confidence IS NULL OR category = 'Uncategorized')
+            ORDER BY date DESC 
+            LIMIT {limit} OFFSET {offset}
+        """
         
-        total = query.count()
-        transactions = query.offset(offset).limit(limit).all()
+        transactions = execute_query(query)
+        
+        # Get total count
+        count_query = f"""
+            SELECT COUNT(*) as total FROM transactions 
+            WHERE (confidence < {min_conf} OR confidence IS NULL OR category = 'Uncategorized')
+        """
+        total_result = execute_query(count_query)
+        total = total_result[0]['total'] if total_result else 0
         
         return {
             "transactions": [
-                TransactionResponse(
-                    id=t.id,
-                    account_id=t.account_id,
-                    posted_at=t.posted_at,
-                    description=t.description,
-                    amount=t.amount,
-                    currency=t.currency,
-                    balance=t.balance,
-                    category=t.category,
-                    vendor=t.vendor,
-                    confidence=t.confidence,
-                    why=t.why,
-                    is_transfer=t.is_transfer
-                ) for t in transactions
+                {
+                    "id": t['id'],
+                    "account_id": t.get('account_id', ''),
+                    "posted_at": t['date'],
+                    "description": t['description'],
+                    "amount": float(t['amount']),
+                    "currency": "USD",
+                    "balance": t.get('balance'),
+                    "category": t.get('category'),
+                    "vendor": None,
+                    "confidence": float(t.get('confidence', 0)),
+                    "why": t.get('explanation', ''),
+                    "is_transfer": 0
+                } for t in transactions
             ],
             "total": total,
             "page": page,
-            "pages": (total + limit - 1) // limit
+            "pages": (total + limit - 1) // limit if total > 0 else 0
         }
         
     except Exception as e:
