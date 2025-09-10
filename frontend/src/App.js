@@ -213,6 +213,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/upload" element={<UploadPage />} />
           <Route path="/reconcile" element={<ReconcilePage />} />
+          <Route path="/forecast" element={<ForecastPage />} />
         </Routes>
       </div>
     </Router>
