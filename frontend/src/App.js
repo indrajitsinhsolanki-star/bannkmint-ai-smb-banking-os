@@ -438,38 +438,195 @@ const ReconcilePage = () => {
   );
 };
 
-// Forecast Page
-const ForecastPage = () => (
-  <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
-    <h2 style={{ fontSize: '2rem', marginBottom: '2rem', color: '#333' }}>📊 Cash Flow Forecast</h2>
-    <div style={{ 
-      border: '1px solid #ddd', 
-      borderRadius: '8px', 
-      padding: '2rem',
-      backgroundColor: 'white'
-    }}>
-      <h3 style={{ marginBottom: '1rem' }}>8-Week SMB Forecast</h3>
-      <p style={{ color: '#666', marginBottom: '2rem' }}>
-        AI-powered cash flow forecasting with crisis prevention alerts.
-      </p>
-      
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-        <div style={{ backgroundColor: '#e8f5e8', padding: '1rem', borderRadius: '4px' }}>
-          <h4>Current Balance</h4>
-          <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#2d5a2d' }}>$25,000</p>
-        </div>
-        <div style={{ backgroundColor: '#e8f4fd', padding: '1rem', borderRadius: '4px' }}>
-          <h4>8-Week Projection</h4>
-          <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1e5a8a' }}>$32,500</p>
-        </div>
-        <div style={{ backgroundColor: '#fff3cd', padding: '1rem', borderRadius: '4px' }}>
-          <h4>Confidence</h4>
-          <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#856404' }}>78%</p>
+// Forecast Page with REAL API data
+const ForecastPage = () => {
+  const [forecastData, setForecastData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+
+  useEffect(() => {
+    const fetchForecast = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/api/forecast?weeks=8`);
+        setForecastData(response.data);
+      } catch (error) {
+        console.error('Error fetching forecast:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchForecast();
+  }, []);
+
+  if (loading) {
+    return (
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
+        <h2 style={{ fontSize: '2rem', marginBottom: '2rem', color: '#333' }}>📊 Cash Flow Forecast</h2>
+        <p>Loading forecast data...</p>
+      </div>
+    );
+  }
+
+  if (!forecastData) {
+    return (
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
+        <h2 style={{ fontSize: '2rem', marginBottom: '2rem', color: '#333' }}>📊 Cash Flow Forecast</h2>
+        <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
+          <p>No forecast data available. Upload transaction data to generate forecasts.</p>
+          <Link to="/upload" style={{ color: '#0066cc', textDecoration: 'none', fontWeight: 'bold' }}>
+            Upload CSV File →
+          </Link>
         </div>
       </div>
+    );
+  }
+
+  const currentCash = forecastData.current_cash || 0;
+  const businessMetrics = forecastData.business_metrics || {};
+  const projections = forecastData.daily_projections || [];
+  
+  // Calculate ending balance from projections
+  const endingBalance = projections.length > 0 ? projections[projections.length - 1].projected_balance : currentCash;
+  
+  // Determine confidence based on data quality
+  const confidence = projections.length > 0 ? Math.round(projections[0].confidence * 100) : 50;
+
+  return (
+    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
+      <h2 style={{ fontSize: '2rem', marginBottom: '2rem', color: '#333' }}>📊 Cash Flow Forecast</h2>
+      <div style={{ 
+        border: '1px solid #ddd', 
+        borderRadius: '8px', 
+        padding: '2rem',
+        backgroundColor: 'white'
+      }}>
+        <h3 style={{ marginBottom: '1rem' }}>8-Week SMB Forecast</h3>
+        <p style={{ color: '#666', marginBottom: '2rem' }}>
+          AI-powered cash flow forecasting based on your uploaded transaction data.
+        </p>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+          <div style={{ 
+            backgroundColor: currentCash >= 0 ? '#e8f5e8' : '#ffeaa7', 
+            padding: '1rem', 
+            borderRadius: '4px' 
+          }}>
+            <h4>Current Balance</h4>
+            <p style={{ 
+              fontSize: '1.5rem', 
+              fontWeight: 'bold', 
+              color: currentCash >= 0 ? '#2d5a2d' : '#b8860b',
+              margin: 0
+            }}>
+              ${currentCash.toFixed(2)}
+            </p>
+          </div>
+          <div style={{ 
+            backgroundColor: endingBalance >= currentCash ? '#e8f4fd' : '#ffdddd', 
+            padding: '1rem', 
+            borderRadius: '4px' 
+          }}>
+            <h4>8-Week Projection</h4>
+            <p style={{ 
+              fontSize: '1.5rem', 
+              fontWeight: 'bold', 
+              color: endingBalance >= currentCash ? '#1e5a8a' : '#cc0000',
+              margin: 0
+            }}>
+              ${endingBalance.toFixed(2)}
+            </p>
+          </div>
+          <div style={{ backgroundColor: '#fff3cd', padding: '1rem', borderRadius: '4px' }}>
+            <h4>Confidence</h4>
+            <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#856404', margin: 0 }}>
+              {confidence}%
+            </p>
+          </div>
+        </div>
+
+        {/* Business Metrics */}
+        {businessMetrics.total_inflows !== undefined && (
+          <div style={{ marginBottom: '2rem' }}>
+            <h4>Business Metrics</h4>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
+              <div>
+                <strong>Total Inflows:</strong> ${businessMetrics.total_inflows?.toFixed(2) || '0.00'}
+              </div>
+              <div>
+                <strong>Total Outflows:</strong> ${businessMetrics.total_outflows?.toFixed(2) || '0.00'}
+              </div>
+              <div>
+                <strong>Net Flow:</strong> 
+                <span style={{ color: businessMetrics.net_flow >= 0 ? '#28a745' : '#dc3545', fontWeight: 'bold' }}>
+                  ${businessMetrics.net_flow?.toFixed(2) || '0.00'}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Weekly Projections */}
+        {projections.length > 0 && (
+          <div>
+            <h4>Weekly Projections</h4>
+            <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#f8f9fa' }}>
+                    <th style={{ padding: '0.5rem', textAlign: 'left', border: '1px solid #dee2e6' }}>Week</th>
+                    <th style={{ padding: '0.5rem', textAlign: 'right', border: '1px solid #dee2e6' }}>Net Flow</th>
+                    <th style={{ padding: '0.5rem', textAlign: 'right', border: '1px solid #dee2e6' }}>Balance</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {projections.slice(0, 8).map((proj, index) => (
+                    <tr key={index}>
+                      <td style={{ padding: '0.5rem', border: '1px solid #dee2e6' }}>Week {proj.week}</td>
+                      <td style={{ 
+                        padding: '0.5rem', 
+                        textAlign: 'right', 
+                        border: '1px solid #dee2e6',
+                        color: proj.net_flow >= 0 ? '#28a745' : '#dc3545'
+                      }}>
+                        ${proj.net_flow?.toFixed(2) || '0.00'}
+                      </td>
+                      <td style={{ 
+                        padding: '0.5rem', 
+                        textAlign: 'right', 
+                        border: '1px solid #dee2e6',
+                        fontWeight: 'bold'
+                      }}>
+                        ${proj.projected_balance?.toFixed(2) || '0.00'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Crisis Alerts */}
+        {forecastData.crisis_alerts && forecastData.crisis_alerts.length > 0 && (
+          <div style={{ 
+            marginTop: '2rem', 
+            padding: '1rem', 
+            backgroundColor: '#fff3cd', 
+            border: '1px solid #ffeaa7', 
+            borderRadius: '4px' 
+          }}>
+            <h4 style={{ color: '#856404', margin: '0 0 1rem 0' }}>⚠️ Cash Flow Alerts</h4>
+            {forecastData.crisis_alerts.map((alert, index) => (
+              <p key={index} style={{ margin: '0.5rem 0', color: '#856404' }}>
+                {alert.message}
+              </p>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // Main App Component
 function App() {
