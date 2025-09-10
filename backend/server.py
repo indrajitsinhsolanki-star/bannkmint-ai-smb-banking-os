@@ -33,18 +33,36 @@ async def upload_csv(file: UploadFile = File(...)):
         cursor.execute('CREATE TABLE transactions (id TEXT, description TEXT, amount REAL, category TEXT)')
         
         for _, row in df.iterrows():
-            desc = str(row.get('description', '')).lower()
-            # Fix amount parsing - handle negative signs and currency symbols
-            amount_str = str(row.get('amount', 0))
-            amount_str = amount_str.replace('$', '').replace(',', '').replace('"', '').strip()
+            # Handle different possible column names
+            description = str(row.get('Description', row.get('description', row.get('DESCRIPTION', ''))))
+            
+            # Get amount from different possible column names and handle the format properly
+            amount_value = row.get('Amount', row.get('amount', row.get('AMOUNT', 0)))
+            amount_str = str(amount_value).replace('$', '').replace(',', '').replace('"', '').strip()
+            
+            # Handle negative amounts (credits are negative, debits are positive in restaurant context)
+            transaction_type = str(row.get('Type', row.get('type', ''))).lower()
             if amount_str.startswith('-') or '(' in amount_str:
                 amount = -abs(float(amount_str.replace('(', '').replace(')', '').replace('-', '')))
             else:
                 amount = float(amount_str)
+                # If it's a Credit type, make it negative (money going out)
+                if 'credit' in transaction_type:
+                    amount = -abs(amount)
             
-            category = "Meals & Entertainment" if any(w in desc for w in ['restaurant', 'pizza', 'coffee', 'mcdonald', 'starbucks', 'chipotle', 'domino', 'kfc', 'taco', 'buffalo', 'olive', 'subway']) else "Business Expense"
+            # Better categorization based on description
+            desc_lower = description.lower()
+            if any(w in desc_lower for w in ['restaurant', 'square', 'food', 'sysco', 'supplier']):
+                category = "Restaurant Operations"
+            elif any(w in desc_lower for w in ['payroll', 'processing']):
+                category = "Payroll & Benefits"
+            elif any(w in desc_lower for w in ['rent', 'utilities', 'gas']):
+                category = "Rent & Utilities"
+            else:
+                category = "Business Expense"
+                
             cursor.execute("INSERT INTO transactions VALUES (?, ?, ?, ?)", 
-                         (str(uuid.uuid4()), str(row.get('description', '')), amount, category))
+                         (str(uuid.uuid4()), description, amount, category))
         
         conn.commit()
         conn.close()
