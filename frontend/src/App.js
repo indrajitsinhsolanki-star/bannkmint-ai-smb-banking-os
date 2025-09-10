@@ -113,7 +113,7 @@ const ReconcilePage = () => {
           {transactions.map((t, i) => (
             <div key={i} style={{ backgroundColor: '#f8f9fa', padding: '1rem', marginBottom: '1rem', borderRadius: '4px' }}>
               <h4>{t.description}</h4>
-              <p><strong>Amount:</strong> ${t.amount}</p>
+              <p><strong>Amount:</strong> ${t.amount?.toFixed(2) || '0.00'}</p>
               <p><strong>Category:</strong> {t.category}</p>
             </div>
           ))}
