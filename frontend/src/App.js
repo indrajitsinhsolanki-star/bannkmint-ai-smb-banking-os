@@ -330,31 +330,113 @@ const UploadPage = () => {
   );
 };
 
-// Reconcile Page
-const ReconcilePage = () => (
-  <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
-    <h2 style={{ fontSize: '2rem', marginBottom: '2rem', color: '#333' }}>🔄 AI Reconciliation</h2>
-    <div style={{ 
-      border: '1px solid #ddd', 
-      borderRadius: '8px', 
-      padding: '2rem',
-      backgroundColor: 'white'
-    }}>
-      <h3 style={{ marginBottom: '1rem' }}>Transaction Review</h3>
-      <p style={{ color: '#666', marginBottom: '2rem' }}>
-        Review AI-categorized transactions with confidence scores and explanations.
-      </p>
-      
-      <div style={{ backgroundColor: '#f8f9fa', padding: '1rem', borderRadius: '4px' }}>
-        <h4>Sample Transaction</h4>
-        <p><strong>Description:</strong> Coffee Shop Purchase</p>
-        <p><strong>Amount:</strong> -$4.50</p>
-        <p><strong>Category:</strong> Meals & Entertainment (Confidence: 95%)</p>
-        <p><strong>Explanation:</strong> Matched pattern: 'coffee'</p>
+// Reconcile Page with REAL API data
+const ReconcilePage = () => {
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/api/reconcile/inbox`);
+        setTransactions(response.data.transactions || []);
+      } catch (error) {
+        console.error('Error fetching transactions:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTransactions();
+  }, []);
+
+  if (loading) {
+    return (
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
+        <h2 style={{ fontSize: '2rem', marginBottom: '2rem', color: '#333' }}>🔄 AI Reconciliation</h2>
+        <p>Loading transactions...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
+      <h2 style={{ fontSize: '2rem', marginBottom: '2rem', color: '#333' }}>🔄 AI Reconciliation</h2>
+      <div style={{ 
+        border: '1px solid #ddd', 
+        borderRadius: '8px', 
+        padding: '2rem',
+        backgroundColor: 'white'
+      }}>
+        <h3 style={{ marginBottom: '1rem' }}>Transaction Review ({transactions.length} transactions)</h3>
+        <p style={{ color: '#666', marginBottom: '2rem' }}>
+          Review AI-categorized transactions with confidence scores and explanations.
+        </p>
+        
+        {transactions.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
+            <p>No transactions found. Upload a CSV file to get started.</p>
+            <Link to="/upload" style={{ color: '#0066cc', textDecoration: 'none', fontWeight: 'bold' }}>
+              Upload CSV File →
+            </Link>
+          </div>
+        ) : (
+          <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+            {transactions.slice(0, 20).map((transaction, index) => (
+              <div key={transaction.id || index} style={{ 
+                backgroundColor: '#f8f9fa', 
+                padding: '1rem', 
+                borderRadius: '4px',
+                marginBottom: '1rem',
+                border: '1px solid #e9ecef'
+              }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: '1rem', alignItems: 'center' }}>
+                  <div>
+                    <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem' }}>{transaction.description}</h4>
+                    <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>
+                      {transaction.posted_at ? new Date(transaction.posted_at).toLocaleDateString() : 'No date'}
+                    </p>
+                  </div>
+                  <div>
+                    <strong style={{ color: transaction.amount < 0 ? '#dc3545' : '#28a745' }}>
+                      ${Math.abs(transaction.amount).toFixed(2)}
+                    </strong>
+                  </div>
+                  <div>
+                    <span style={{
+                      backgroundColor: '#e3f2fd',
+                      color: '#1976d2',
+                      padding: '0.25rem 0.5rem',
+                      borderRadius: '12px',
+                      fontSize: '0.8rem'
+                    }}>
+                      {transaction.category}
+                    </span>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '0.8rem', color: '#666' }}>
+                      {Math.round((transaction.confidence || 0) * 100)}% confidence
+                    </span>
+                  </div>
+                </div>
+                {transaction.why && (
+                  <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.8rem', color: '#666', fontStyle: 'italic' }}>
+                    {transaction.why}
+                  </p>
+                )}
+              </div>
+            ))}
+            {transactions.length > 20 && (
+              <p style={{ textAlign: 'center', color: '#666', marginTop: '1rem' }}>
+                Showing first 20 of {transactions.length} transactions
+              </p>
+            )}
+          </div>
+        )}
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 // Forecast Page
 const ForecastPage = () => (
