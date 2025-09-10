@@ -82,10 +82,12 @@ async def upload_csv(file: UploadFile = File(...)):
         # Parse CSV
         df = pd.read_csv(StringIO(csv_data))
         
-        # Process transactions
+        # CLEAR EXISTING DATA FIRST
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
+        cursor.execute('DELETE FROM transactions')
         
+        # Process NEW transactions
         imported = 0
         for _, row in df.iterrows():
             # Categorize each transaction
