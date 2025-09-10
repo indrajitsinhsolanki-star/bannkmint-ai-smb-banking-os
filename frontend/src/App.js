@@ -205,6 +205,7 @@ function App() {
             <Link to="/" style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#333', textDecoration: 'none' }}>🏦 BannkMint AI</Link>
             <Link to="/upload" style={{ color: '#333', textDecoration: 'none' }}>Upload</Link>
             <Link to="/reconcile" style={{ color: '#333', textDecoration: 'none' }}>Reconcile</Link>
+            <Link to="/forecast" style={{ color: '#333', textDecoration: 'none' }}>Forecast</Link>
           </div>
         </nav>
 
