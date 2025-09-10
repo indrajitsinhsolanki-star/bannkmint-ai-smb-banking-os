@@ -34,9 +34,17 @@ async def upload_csv(file: UploadFile = File(...)):
         
         for _, row in df.iterrows():
             desc = str(row.get('description', '')).lower()
-            category = "Meals & Entertainment" if any(w in desc for w in ['restaurant', 'pizza', 'coffee', 'mcdonald', 'starbucks']) else "Business Expense"
+            # Fix amount parsing - handle negative signs and currency symbols
+            amount_str = str(row.get('amount', 0))
+            amount_str = amount_str.replace('$', '').replace(',', '').replace('"', '').strip()
+            if amount_str.startswith('-') or '(' in amount_str:
+                amount = -abs(float(amount_str.replace('(', '').replace(')', '').replace('-', '')))
+            else:
+                amount = float(amount_str)
+            
+            category = "Meals & Entertainment" if any(w in desc for w in ['restaurant', 'pizza', 'coffee', 'mcdonald', 'starbucks', 'chipotle', 'domino', 'kfc', 'taco', 'buffalo', 'olive', 'subway']) else "Business Expense"
             cursor.execute("INSERT INTO transactions VALUES (?, ?, ?, ?)", 
-                         (str(uuid.uuid4()), str(row.get('description', '')), float(row.get('amount', 0)), category))
+                         (str(uuid.uuid4()), str(row.get('description', '')), amount, category))
         
         conn.commit()
         conn.close()
