@@ -123,6 +123,69 @@ const ReconcilePage = () => {
   );
 };
 
+const ForecastPage = () => {
+  const [forecastData, setForecastData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || '';
+
+  useEffect(() => {
+    const fetchForecast = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/api/forecast`);
+        setForecastData(response.data);
+      } catch (error) {
+        console.error('Error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchForecast();
+  }, []);
+
+  if (loading) return <div style={{ padding: '2rem' }}>Loading forecast...</div>;
+
+  const currentCash = forecastData?.current_cash || 0;
+  const businessMetrics = forecastData?.business_metrics || {};
+  const projections = forecastData?.daily_projections || [];
+
+  return (
+    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
+      <h2>📊 Cash Flow Forecast</h2>
+      
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+        <div style={{ backgroundColor: currentCash >= 0 ? '#e8f5e8' : '#ffeaa7', padding: '1rem', borderRadius: '4px' }}>
+          <h4>Current Balance</h4>
+          <p style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>${currentCash.toFixed(2)}</p>
+        </div>
+        <div style={{ backgroundColor: '#e8f4fd', padding: '1rem', borderRadius: '4px' }}>
+          <h4>8-Week Projection</h4>
+          <p style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>
+            ${projections.length > 0 ? projections[projections.length - 1].projected_balance.toFixed(2) : '0.00'}
+          </p>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: '2rem' }}>
+        <h4>Business Metrics</h4>
+        <p>Total Inflows: ${businessMetrics.total_inflows?.toFixed(2) || '0.00'}</p>
+        <p>Total Outflows: ${businessMetrics.total_outflows?.toFixed(2) || '0.00'}</p>
+        <p>Net Flow: ${businessMetrics.net_flow?.toFixed(2) || '0.00'}</p>
+      </div>
+
+      {projections.length > 0 && (
+        <div>
+          <h4>Weekly Projections</h4>
+          {projections.slice(0, 4).map((proj, i) => (
+            <div key={i} style={{ padding: '0.5rem', borderBottom: '1px solid #eee' }}>
+              Week {proj.week}: ${proj.projected_balance.toFixed(2)}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const HomePage = () => (
   <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem', textAlign: 'center' }}>
     <h1>🏦 BannkMint AI</h1>
