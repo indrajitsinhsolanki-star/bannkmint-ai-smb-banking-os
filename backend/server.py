@@ -67,6 +67,38 @@ async def get_transactions():
     transactions = [{"id": r[0], "posted_at": "2024-01-01", "description": r[1], "amount": r[2], "category": r[3], "confidence": 0.9, "why": "Auto-categorized"} for r in rows]
     return {"transactions": transactions, "total": len(transactions)}
 
+@app.get("/api/forecast")
+async def get_forecast():
+    if not os.path.exists(DB_PATH):
+        return {"current_cash": 0.0, "business_metrics": {}, "daily_projections": []}
+    
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT amount FROM transactions")
+    amounts = [row[0] for row in cursor.fetchall()]
+    conn.close()
+    
+    if not amounts:
+        return {"current_cash": 0.0, "business_metrics": {}, "daily_projections": []}
+    
+    total_inflow = sum(a for a in amounts if a > 0)
+    total_outflow = sum(abs(a) for a in amounts if a < 0)
+    current_cash = total_inflow - total_outflow
+    net_weekly = (total_inflow - total_outflow) / 4
+    
+    projections = []
+    balance = current_cash
+    for week in range(1, 9):
+        balance += net_weekly
+        projections.append({"week": week, "projected_balance": balance, "net_flow": net_weekly, "confidence": 0.75})
+    
+    return {
+        "current_cash": current_cash,
+        "business_metrics": {"total_inflows": total_inflow, "total_outflows": total_outflow, "net_flow": total_inflow - total_outflow},
+        "daily_projections": projections,
+        "crisis_alerts": []
+    }
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8001)
